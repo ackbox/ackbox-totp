@@ -1,11 +1,6 @@
 group "com.ackbox"
 version "1.0"
 
-ext {
-    mavenUsername = project.hasProperty('mavenUsername') ? project.getProperty('mavenUsername') : ''
-    mavenPassword = project.hasProperty('mavenPassword') ? project.getProperty('mavenPassword') : ''
-}
-
 buildscript {
     ext.apacheCommonsCodecVersion = "1.10"
     ext.kotlinVersion = "1.1.3-eap-68"
@@ -21,7 +16,8 @@ buildscript {
 }
 
 apply plugin: "kotlin"
-apply plugin: "maven-publish"
+apply plugin: "maven"
+apply plugin: "signing"
 
 repositories {
     maven { url "http://dl.bintray.com/kotlin/kotlin-eap-1.1" }
@@ -43,78 +39,71 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-task sourceJar(type: Jar, dependsOn: classes) {
-    classifier 'sources'
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier "sources"
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    classifier = "javadoc"
     from javadoc.destinationDir
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            artifact sourceJar
-            artifact javadocJar
-
-            tasks.withType(Jar) {
-                from(project.projectDir) {
-                    include 'LICENSE'
-                    into 'META-INF'
-                }
-            }
-        }
-        mavenCustom(MavenPublication) {
-            pom.withXml {
-                asNode().with {
-                    appendNode('description', 'TOTP authenticator written in Kotlin')
-                    appendNode('url', 'https://github.com/ackbox/ackbox-totp')
-                    appendNode('scm').with {
-                        appendNode('url', 'https://github.com/ackbox/ackbox-totp')
-                        appendNode('connection', 'scm:git:git://github.com/ackbox/ackbox-totp.git')
-                    }
-                    appendNode('licenses').with {
-                        appendNode('license').with {
-                            appendNode('name', 'MIT License')
-                            appendNode('url', 'https://github.com/ackbox/ackbox-totp/blob/master/LICENSE')
-                        }
-                    }
-                    appendNode('organization').with {
-                        appendNode('name', 'Ackbox')
-                        appendNode('url', 'https://ackbox.com')
-                    }
-                    appendNode('developers').with {
-                        appendNode('developer').with {
-                            appendNode('id', 'trein')
-                            appendNode('name', 'Guilherme M. Trein')
-                            appendNode('email', 'trein@ackbox.com')
-                            appendNode('organization', 'Ackbox')
-                            appendNode('organizationUrl', 'https://ackbox.com')
-                            appendNode('timezone', '1')
-                        }
-                    }
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            credentials {
-                // requires $ gradle publish -P mavenUsername=??? -P mavenPassword=???
-                username project.mavenUsername
-                password project.mavenPassword
-            }
-            url 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
-        }
-    }
+artifacts {
+    archives jar, javadocJar, sourcesJar
 }
 
-model {
-    tasks.generatePomFileForMavenCustomPublication {
-        destination = file("$buildDir/generated-pom.xml")
+signing {
+    sign configurations.archives
+}
+
+def getSonatypeProperty(String name) {
+    name = "sonatype" + name.capitalize()
+    if (project.hasProperty(name)) {
+        return project.getProperties()[name]
+    }
+    return ""
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
+                authentication(userName: getSonatypeProperty("username"), password: getSonatypeProperty("password"))
+            }
+
+            pom.project {
+                name project.name
+                description "TOTP authenticator written in Kotlin"
+                url "https://github.com/ackbox/ackbox-totp"
+                version project.version
+                groupId project.group
+                artifactId project.name
+                packaging "jar"
+                scm {
+                    connection "scm:git:git://github.com/ackbox/ackbox-totp.git"
+                    url "https://github.com/ackbox/ackbox-totp"
+                }
+                licenses {
+                    license {
+                        name "MIT License"
+                        url "https://github.com/ackbox/ackbox-totp/blob/master/LICENSE"
+                        distribution "repo"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id "trein"
+                        name "Guilherme M. Trein"
+                        email "trein@ackbox.com"
+                        organization "Ackbox"
+                        organizationUrl "https://ackbox.com"
+                    }
+                }
+            }
+        }
     }
 }
