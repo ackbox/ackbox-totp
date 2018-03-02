@@ -1,11 +1,12 @@
 package com.ackbox.totp
 
-import java.net.URI
+import org.apache.http.client.utils.URIBuilder
 import java.net.URLEncoder
+import java.nio.charset.Charset
 
 object QRCodeFactory {
 
-    private val QR_GENERATOR_URI_FORMAT = "https://chart.googleapis.com/chart?chs=200x200&chld=M%%7C0&cht=qr&chl=%s"
+    private const val QR_GENERATOR_URI_FORMAT = "https://chart.googleapis.com/chart?chs=200x200&chld=M%%7C0&cht=qr&chl=%s"
 
     /**
      * Returns the URL of a Google Chart API call to generate a QR barcode to be loaded into the
@@ -18,8 +19,8 @@ object QRCodeFactory {
      * @return the Google Chart API call URL to generate a QR code containing the provided information.
      */
     fun createQRCodeURL(issuer: String?, accountName: String, secretKey: TOTPSecretKey): String {
-        val encodedCode = createOTPURL(issuer, accountName, secretKey)
-        return String.format(QR_GENERATOR_URI_FORMAT, URLEncoder.encode(encodedCode, "UTF-8"))
+        val url = createOTPURL(issuer, accountName, secretKey)
+        return String.format(QR_GENERATOR_URI_FORMAT, encode(url))
     }
 
     /**
@@ -43,11 +44,13 @@ object QRCodeFactory {
         issuer?.let {
             require(!issuer.contains(":"), { "Issuer cannot contain the \':\' character." })
         }
-        val uri = URLBuilder("otpauth", "totp")
-            .addPath("/${formatLabel(issuer, accountName)}")
-            .addParameter("secret", secretKey.to(TOTPSecretKey.KeyRepresentation.BASE32))
-        issuer?.let { uri.addParameter("issuer", issuer) }
-        return uri.build().toString()
+        val builder = URIBuilder()
+            .setScheme("otpauth")
+            .setHost("totp")
+            .setPath("/" + formatLabel(issuer, accountName))
+            .setParameter("secret", secretKey.to(TOTPSecretKey.KeyRepresentation.BASE32))
+        issuer?.let { builder.setParameter("issuer", issuer) }
+        return builder.toString()
     }
 
     /**
@@ -63,28 +66,7 @@ object QRCodeFactory {
      * label = accountname / issuer (“:” / “%3A”) *”%20” accountname
      * </pre>
      */
-    private fun formatLabel(issuer: String?, accountName: String): String {
-        return listOf(issuer, accountName).filterNotNull().joinToString(":")
-    }
+    private fun formatLabel(issuer: String?, accountName: String) = listOfNotNull(issuer, accountName).joinToString(":")
 
-    internal class URLBuilder(private val protocol: String, private val host: String) {
-
-        private val paths = StringBuilder()
-        private val params = StringBuilder()
-
-        fun addPath(path: String): URLBuilder {
-            paths.append("/").append(path)
-            return this
-        }
-
-        fun addParameter(parameter: String, value: String): URLBuilder {
-            if (params.toString().isNotEmpty()) {
-                params.append("&")
-            }
-            params.append(parameter).append("=").append(value)
-            return this
-        }
-
-        fun build() = URI(protocol, host, paths.toString(), params.toString(), null).toURL()!!
-    }
+    private fun encode(decoded: String, charset: Charset = Charsets.UTF_8) = URLEncoder.encode(decoded, charset.name())
 }
