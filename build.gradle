@@ -1,5 +1,5 @@
 group "com.ackbox"
-version "1.0.1"
+version "1.1.0"
 
 buildscript {
     ext.apacheCommonsCodecVersion = "1.10"
