@@ -9,15 +9,15 @@ If you're using Maven, simply add the following dependency to your `POM.xml` fil
 ```xml
 <dependency>
   <groupId>com.ackbox</groupId>
-  <artifactId>totp</artifactId>
-  <version>1.0</version>
+  <artifactId>ackbox-totp</artifactId>
+  <version>1.0.1</version>
 </dependency>
 ```
 
 Or if you prefer Gradle, include the following declaration to your `build.gradle` file:
 
 ```
-compile 'com.ackbox:totp:1.0'
+compile 'com.ackbox:ackbox-totp:1.0.1'
 ```
 
 ## Usage
