@@ -4,11 +4,11 @@ version "1.1.0"
 buildscript {
     ext.apacheCommonsCodecVersion = "1.10"
     ext.apacheHttpClientVersion = "4.5.3"
-    ext.kotlinVersion = "1.1.3-eap-68"
+    ext.kotlinVersion = "1.2.71"
     ext.slf4jVersion = "1.7.7"
+    ext.junitVersion = "4.12"
 
     repositories {
-        maven { url "http://dl.bintray.com/kotlin/kotlin-eap-1.1" }
         mavenCentral()
     }
     dependencies {
@@ -21,16 +21,15 @@ apply plugin: "maven"
 apply plugin: "signing"
 
 repositories {
-    maven { url "http://dl.bintray.com/kotlin/kotlin-eap-1.1" }
     mavenCentral()
 }
 
 dependencies {
     compile "org.slf4j:slf4j-api:$slf4jVersion"
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     compile "commons-codec:commons-codec:$apacheCommonsCodecVersion"
     compile "org.apache.httpcomponents:httpclient:$apacheHttpClientVersion"
-    testCompile "junit:junit:4.12"
+    testCompile "junit:junit:$junitVersion"
 }
 
 compileKotlin {
@@ -61,10 +60,7 @@ signing {
 
 def getSonatypeProperty(String name) {
     name = "sonatype" + name.capitalize()
-    if (project.hasProperty(name)) {
-        return project.getProperties()[name]
-    }
-    return ""
+    return project.hasProperty(name) ? project.getProperties()[name] : ""
 }
 
 uploadArchives {
