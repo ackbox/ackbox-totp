@@ -10,14 +10,14 @@ If you're using Maven, simply add the following dependency to your `POM.xml` fil
 <dependency>
   <groupId>com.ackbox</groupId>
   <artifactId>ackbox-totp</artifactId>
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
 Or if you prefer Gradle, include the following declaration to your `build.gradle` file:
 
 ```
-compile 'com.ackbox:ackbox-totp:1.0.1'
+compile 'com.ackbox:ackbox-totp:1.1.0'
 ```
 
 ## Usage
